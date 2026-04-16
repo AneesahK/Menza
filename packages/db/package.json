@@ -1,0 +1,62 @@
+{
+  "name": "@demo/db",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "packageManager": "pnpm@10.18.3",
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "db:generate": "dotenvx run -f ../../.env -- drizzle-kit generate",
+    "db:migrate": "dotenvx run -f ../../.env -- drizzle-kit migrate",
+    "db:seed": "dotenvx run -f ../../.env -- tsx src/seed.ts",
+    "db:studio": "dotenvx run -f ../../.env -- drizzle-kit studio --port=3002",
+    "lint": "biome lint .",
+    "clean": "rm -rf node_modules dist",
+    "format": "prettier --check . --ignore-path ../../.gitignore --ignore-path ../../.prettierignore",
+    "typecheck": "tsc -b tsconfig.json",
+    "watch": "tsc --watch -p ./tsconfig.build.json"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/db.d.ts",
+      "import": "./dist/db.js",
+      "default": "./dist/db.js"
+    },
+    "./schema": {
+      "types": "./dist/schema/index.d.ts",
+      "import": "./dist/schema/index.js",
+      "default": "./dist/schema/index.js"
+    },
+    "./types/widget/*": {
+      "types": "./dist/types/widget/*.d.ts",
+      "import": "./dist/types/widget/*.js",
+      "default": "./dist/types/widget/*.js"
+    },
+    "./types/message": {
+      "types": "./dist/types/message.d.ts",
+      "import": "./dist/types/message.js",
+      "default": "./dist/types/message.js"
+    },
+    "./utils": {
+      "types": "./dist/utils.d.ts",
+      "import": "./dist/utils.js",
+      "default": "./dist/utils.js"
+    }
+  },
+  "dependencies": {
+    "drizzle-orm": "0.44.6",
+    "drizzle-zod": "0.7.1",
+    "pg": "8.16.3",
+    "ulidx": "2.4.1",
+    "zod": "3.25.67"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.3.10",
+    "@types/node": "24.12.2",
+    "@types/pg": "8.16.0",
+    "@dotenvx/dotenvx": "1.51.4",
+    "drizzle-kit": "0.31.5",
+    "tsx": "4.21.0",
+    "typescript": "6.0.2"
+  }
+}

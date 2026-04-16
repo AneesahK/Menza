@@ -1,0 +1,71 @@
+{
+  "name": "@demo/llm",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "packageManager": "pnpm@10.18.3",
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "clean": "rm -rf node_modules dist",
+    "format": "prettier --check . --ignore-path ../../.gitignore --ignore-path ../../.prettierignore",
+    "lint": "biome lint .",
+    "typecheck": "tsc -b tsconfig.json",
+    "watch": "tsc --watch -p ./tsconfig.build.json"
+  },
+  "exports": {
+    "./agents/data-agent": {
+      "types": "./dist/agents/data-agent.d.ts",
+      "import": "./dist/agents/data-agent.js",
+      "default": "./dist/agents/data-agent.js"
+    },
+    "./agents/widget-agent": {
+      "types": "./dist/agents/widget-agent.d.ts",
+      "import": "./dist/agents/widget-agent.js",
+      "default": "./dist/agents/widget-agent.js"
+    },
+    "./services/anthropic": {
+      "types": "./dist/services/anthropic.d.ts",
+      "import": "./dist/services/anthropic.js",
+      "default": "./dist/services/anthropic.js"
+    },
+    "./stream/emitter": {
+      "types": "./dist/stream/emitter.d.ts",
+      "import": "./dist/stream/emitter.js",
+      "default": "./dist/stream/emitter.js"
+    },
+    "./stream/listener": {
+      "types": "./dist/stream/listener.d.ts",
+      "import": "./dist/stream/listener.js",
+      "default": "./dist/stream/listener.js"
+    },
+    "./stream/events": {
+      "types": "./dist/stream/events.d.ts",
+      "import": "./dist/stream/events.js",
+      "default": "./dist/stream/events.js"
+    },
+    "./types/*": {
+      "types": "./dist/types/*.d.ts",
+      "import": "./dist/types/*.js",
+      "default": "./dist/types/*.js"
+    },
+    "./helpers/*": {
+      "types": "./dist/helpers/*.d.ts",
+      "import": "./dist/helpers/*.js",
+      "default": "./dist/helpers/*.js"
+    }
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.77.0",
+    "@demo/db": "workspace:*",
+    "@demo/queue": "workspace:*",
+    "drizzle-orm": "0.44.6",
+    "ioredis": "5.8.2",
+    "zod": "3.25.67",
+    "zod-to-json-schema": "3.25.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.3.10",
+    "@types/node": "24.12.2",
+    "typescript": "6.0.2"
+  }
+}

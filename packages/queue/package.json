@@ -1,0 +1,42 @@
+{
+  "name": "@demo/queue",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "packageManager": "pnpm@10.18.3",
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "clean": "rm -rf node_modules dist",
+    "format": "prettier --check . --ignore-path ../../.gitignore --ignore-path ../../.prettierignore",
+    "lint": "biome lint .",
+    "typecheck": "tsc -b tsconfig.json",
+    "watch": "tsc --watch -p ./tsconfig.build.json"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./redis": {
+      "types": "./dist/redis.d.ts",
+      "import": "./dist/redis.js",
+      "default": "./dist/redis.js"
+    },
+    "./jobs": {
+      "types": "./dist/job-defs.d.ts",
+      "import": "./dist/job-defs.js",
+      "default": "./dist/job-defs.js"
+    }
+  },
+  "dependencies": {
+    "@demo/db": "workspace:*",
+    "bullmq": "5.66.4",
+    "ioredis": "5.6.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.3.10",
+    "@types/node": "24.12.2",
+    "typescript": "6.0.2"
+  }
+}

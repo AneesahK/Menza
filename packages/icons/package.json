@@ -1,0 +1,53 @@
+{
+  "name": "@demo/icons",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "packageManager": "pnpm@10.18.3",
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "lint": "biome lint .",
+    "typecheck": "tsc -b tsconfig.json",
+    "clean": "rm -rf node_modules dist"
+  },
+  "exports": {
+    "./pika/stroke/general": {
+      "types": "./dist/pika/stroke/general/index.d.ts",
+      "import": "./dist/pika/stroke/general/index.js",
+      "default": "./dist/pika/stroke/general/index.js"
+    },
+    "./pika/stroke/arrows-chevrons": {
+      "types": "./dist/pika/stroke/arrows-chevrons/index.d.ts",
+      "import": "./dist/pika/stroke/arrows-chevrons/index.js",
+      "default": "./dist/pika/stroke/arrows-chevrons/index.js"
+    },
+    "./pika/stroke/maths": {
+      "types": "./dist/pika/stroke/maths/index.d.ts",
+      "import": "./dist/pika/stroke/maths/index.js",
+      "default": "./dist/pika/stroke/maths/index.js"
+    },
+    "./pika/stroke/alerts": {
+      "types": "./dist/pika/stroke/alerts/index.d.ts",
+      "import": "./dist/pika/stroke/alerts/index.js",
+      "default": "./dist/pika/stroke/alerts/index.js"
+    },
+    "./pika/stroke/communication": {
+      "types": "./dist/pika/stroke/communication/index.d.ts",
+      "import": "./dist/pika/stroke/communication/index.js",
+      "default": "./dist/pika/stroke/communication/index.js"
+    },
+    "./pika/solid/media": {
+      "types": "./dist/pika/solid/media/index.d.ts",
+      "import": "./dist/pika/solid/media/index.js",
+      "default": "./dist/pika/solid/media/index.js"
+    }
+  },
+  "dependencies": {
+    "react": "19.2.3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.3.10",
+    "@types/react": "19.2.7",
+    "typescript": "6.0.2"
+  }
+}

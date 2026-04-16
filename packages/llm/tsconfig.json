@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.options.json",
+  "compilerOptions": {
+    "lib": ["es2022"],
+    "types": ["node"],
+
+    "outDir": "./dist",
+    "sourceMap": true,
+    "noEmit": false,
+    "emitDeclarationOnly": true,
+    "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo"
+  },
+
+  "include": ["src"],
+
+  "references": [
+    { "path": "./tsconfig.build.json" },
+    { "path": "../db" },
+    { "path": "../queue" }
+  ]
+}

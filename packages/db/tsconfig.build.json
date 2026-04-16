@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.options.json",
+  "compilerOptions": {
+    "lib": ["es2022"],
+    "types": ["node"],
+    "moduleResolution": "bundler",
+    "module": "preserve",
+
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "sourceMap": true,
+    "noEmit": false,
+    "emitDeclarationOnly": false,
+    "tsBuildInfoFile": "dist/tsconfig.build.tsbuildinfo"
+  },
+
+  "include": ["src"]
+}

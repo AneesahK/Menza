@@ -1,0 +1,50 @@
+{
+  "name": "@demo/app",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "packageManager": "pnpm@10.18.3",
+  "scripts": {
+    "dev": "dotenvx run -f ../../.env -- next dev --webpack --port 3000",
+    "build": "dotenvx run -f ../../.env -- next build",
+    "start": "dotenvx run -f ../../.env -- next start",
+    "clean": "rm -rf node_modules .next",
+    "lint": "biome lint .",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --check . --ignore-path ../../.gitignore --ignore-path ../../.prettierignore"
+  },
+  "dependencies": {
+    "@demo/db": "workspace:*",
+    "@demo/icons": "workspace:*",
+    "@demo/llm": "workspace:*",
+    "@demo/queue": "workspace:*",
+    "@demo/ui": "workspace:*",
+    "@tanstack/react-query": "5.90.15",
+    "@trpc/client": "11.16.0",
+    "@trpc/react-query": "11.16.0",
+    "@trpc/server": "11.16.0",
+    "drizzle-orm": "0.44.6",
+    "eventsource-client": "1.2.0",
+    "jose": "6.0.11",
+    "next": "16.1.4",
+    "pg": "8.16.3",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-markdown": "10.1.0",
+    "remark-gfm": "4.0.1",
+    "server-only": "0.0.1",
+    "superjson": "2.2.6",
+    "zod": "3.25.67"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.3.10",
+    "@dotenvx/dotenvx": "1.51.4",
+    "@tailwindcss/postcss": "4.1.18",
+    "@tailwindcss/typography": "0.5.19",
+    "@types/node": "24.12.2",
+    "@types/react": "19.2.7",
+    "@types/react-dom": "19.2.3",
+    "tailwindcss": "4.1.18",
+    "typescript": "6.0.2"
+  }
+}
