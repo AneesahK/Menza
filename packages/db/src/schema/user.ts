@@ -10,6 +10,7 @@ export const userTable = pgTable(
     passwordHash: text("password_hash").notNull(),
     name: varchar("name", { length: 255 }).notNull(),
     isActive: boolean("is_active").notNull().default(true),
+    instructions: text("instructions").notNull().default(""),
   },
   (table) => {
     return [

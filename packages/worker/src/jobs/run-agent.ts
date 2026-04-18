@@ -4,7 +4,7 @@ import { Redis } from "ioredis";
 
 import { db } from "../lib/db.js";
 import { createDuckDbQueryFn, getDataSourceContext } from "../lib/duckdb.js";
-import { conversationTable } from "@demo/db/schema";
+import { conversationTable, userTable } from "@demo/db/schema";
 import { createID } from "@demo/db/utils";
 import { DataAgent } from "@demo/llm/agents/data-agent";
 import { StreamEmitter } from "@demo/llm/stream/emitter";
@@ -30,6 +30,13 @@ export async function processRunAgent(
 
   const runId = conversation?.runId ?? createID("run");
 
+  // Fetch user instructions
+  const user = await db.query.userTable.findFirst({
+    where: eq(userTable.id, userId),
+    columns: { instructions: true },
+  });
+  const userInstructions = user?.instructions ?? "";
+
   const redis = new Redis(redisUrl, { maxRetriesPerRequest: null });
   const channel = `conversation.${conversationId}`;
   const streamEmitter = new StreamEmitter(redis, channel);
@@ -49,6 +56,7 @@ export async function processRunAgent(
       },
       dataSourceContext,
       queryFn,
+      userInstructions,
     });
 
     // Inject data source context as system messages (first run only)

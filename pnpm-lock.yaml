@@ -29,6 +29,9 @@ importers:
 
   packages/app:
     dependencies:
+      '@anthropic-ai/sdk':
+        specifier: 0.77.0
+        version: 0.77.0(zod@3.25.67)
       '@demo/db':
         specifier: workspace:*
         version: link:../db

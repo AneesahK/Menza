@@ -2,7 +2,10 @@
 
 import { api } from "@/trpc/react";
 import { PiChatDefaultStroke } from "@demo/icons/pika/stroke/communication";
-import { PiLogOutRightStroke } from "@demo/icons/pika/stroke/general";
+import {
+  PiLogOutRightStroke,
+  PiSidebarMenuStroke,
+} from "@demo/icons/pika/stroke/general";
 import { PiPlusDefaultStroke } from "@demo/icons/pika/stroke/maths";
 import { Button } from "@demo/ui/components/button";
 import {
@@ -90,6 +93,15 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full justify-start gap-2"
+          onClick={() => router.push("/settings")}
+        >
+          <PiSidebarMenuStroke />
+          <span>Settings</span>
+        </Button>
         <SidebarSeparator />
         <Button
           variant="ghost"
