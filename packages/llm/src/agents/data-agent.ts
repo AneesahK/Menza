@@ -81,23 +81,6 @@ export class DataAgent {
       isVisible: false,
       runId: this.ctx.runId,
     });
-
-    if (this.userInstructions.trim()) {
-      await this.ctx.db.insert(messageTable).values({
-        id: createID("message"),
-        userId: this.ctx.userId,
-        orgId: this.ctx.orgId,
-        conversationId: this.ctx.conversationId,
-        message: `--- User Instructions ---
-The following are permanent instructions set by the user. Always follow these precisely, even if the question implies otherwise:
-
-${this.userInstructions}
---- End User Instructions ---`,
-        role: "system",
-        isVisible: false,
-        runId: this.ctx.runId,
-      });
-    }
   }
 
   async run(): Promise<void> {
@@ -118,6 +101,18 @@ ${this.userInstructions}
     const systemPrompt: Array<Anthropic.TextBlockParam> = [
       { type: "text", text: DATA_AGENT_SYSTEM_PROMPT },
     ];
+
+    // Inject user instructions dynamically on every run (not persisted to DB)
+    if (this.userInstructions.trim()) {
+      systemPrompt.push({
+        type: "text",
+        text: `--- User Instructions ---
+The following are permanent instructions set by the user. Always follow these precisely, even if the question implies otherwise:
+
+${this.userInstructions}
+--- End User Instructions ---`,
+      });
+    }
 
     const agent = new BaseChatAgent({
       ctx: this.ctx,

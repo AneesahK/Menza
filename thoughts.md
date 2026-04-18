@@ -109,3 +109,34 @@ Trace the full flow end to end and check for any gaps:
 4. Does DataAgent include the instructions block in the system messages sent to the Anthropic API?
 
 Fix any broken links in the chain without changing the overall approach.
+
+----
+My thought:
+- After the above prompt -> instructions are written once per conversation (meaning changes won't be reflected)
+
+-----
+
+There's a bug with how user instructions are injected. Currently they're written to 
+the database as a system message in DataAgent.createConversation() — this means they're 
+baked in at conversation creation and don't update when the user changes their settings.
+
+I need instructions to be injected fresh on every agent run instead. Here's what to change:
+
+1. packages/llm/src/agents/data-agent.ts
+   - Remove the user instructions system message insertion from createConversation()
+   - In the run() method, find where messages are passed to the Anthropic API call
+   - Inject the user instructions there instead, as a system message or prepended 
+     context — somewhere that is constructed fresh on every run() call, not persisted 
+     to the database
+
+2. The userInstructions property and constructor param can stay — just move where 
+   it's used from createConversation() to run()
+
+3. Make sure that if userInstructions is empty, nothing extra is injected
+
+The goal: every time a user sends a message, the agent picks up whatever instructions 
+are currently saved in the database at that moment — so changes in settings are 
+immediately reflected in all conversations, old and new, and removing instructions 
+takes effect immediately too.
+
+Don't change anything in the worker, tRPC router, settings page, or BaseChatAgent.
