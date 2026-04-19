@@ -1,4 +1,4 @@
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 
 import { ExecSqlTool } from "../tools/exec-sql.js";
 import { ShowWidgetTool, type ShowWidgetInput } from "../tools/show-widget.js";
@@ -7,7 +7,7 @@ import type { ToolCallResult } from "../types/tools.js";
 import { BaseChatAgent } from "./base-chat-agent.js";
 import { WidgetAgent } from "./widget-agent.js";
 import type Anthropic from "@anthropic-ai/sdk";
-import { conversationTable, messageTable } from "@demo/db/schema";
+import { conversationTable, messageTable, userMemoryTable } from "@demo/db/schema";
 import { createID } from "@demo/db/utils";
 import { MemoryService } from "../services/memory-service.js";
 
@@ -134,6 +134,17 @@ export class DataAgent {
     // Fetch user memories and inject them into the system prompt
     let userContextMessage = "";
     try {
+      // Fast path: Skip memory search if user has no memories
+      const memoryCount = await this.ctx.db
+        .select({ count: sql<number>`count(*)` })
+        .from(userMemoryTable)
+        .where(eq(userMemoryTable.userId, this.ctx.userId));
+
+      if (memoryCount[0]?.count === 0) {
+        // No memories, skip the entire memory search process
+        return `<data_source_context>\n${this.dataSourceContext}\n</data_source_context>`;
+      }
+
       // Get the latest user message to use as the query for memory search
       const latestUserMessage = await this.ctx.db
         .select()
