@@ -3,45 +3,53 @@
 import { useState } from "react";
 import { api } from "@/trpc/react";
 import { Button } from "@demo/ui/components/button";
-import { Dialog } from "@demo/ui/components/dialog";
 import { Input } from "@demo/ui/components/input";
 import { Textarea } from "@demo/ui/components/textarea";
 import { ScrollArea } from "@demo/ui/components/scroll-area";
+import { Toast } from "@demo/ui/components/toast";
+import { PiCheckTickSingleStroke } from "@demo/icons/pika/stroke/general";
 import { PiMultipleCrossCancelDefaultStroke } from "@demo/icons/pika/stroke/maths";
 import { PiPlusDefaultStroke } from "@demo/icons/pika/stroke/maths";
 
 export default function MemoriesPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [newMemoryContent, setNewMemoryContent] = useState("");
-  const [editingMemory, setEditingMemory] = useState<{
-    id: string;
-    content: string;
+  const [editingMemoryId, setEditingMemoryId] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState("");
+  const [toast, setToast] = useState<{
+    message: string;
+    variant: "success" | "error";
   } | null>(null);
-  const [deletingMemoryId, setDeletingMemoryId] = useState<string | null>(null);
 
   const { data: memories, refetch } = api.memory.list.useQuery();
   const createMutation = api.memory.create.useMutation({
     onSuccess: () => {
       void refetch();
-      setIsAddDialogOpen(false);
       setNewMemoryContent("");
+      setToast({ message: "Memory added", variant: "success" });
+    },
+    onError: () => {
+      setToast({ message: "Failed to add memory", variant: "error" });
     },
   });
   const updateMutation = api.memory.update.useMutation({
     onSuccess: () => {
       void refetch();
-      setIsEditDialogOpen(false);
-      setEditingMemory(null);
+      setEditingMemoryId(null);
+      setEditingContent("");
+      setToast({ message: "Memory updated", variant: "success" });
+    },
+    onError: () => {
+      setToast({ message: "Failed to update memory", variant: "error" });
     },
   });
   const deleteMutation = api.memory.delete.useMutation({
     onSuccess: () => {
       void refetch();
-      setIsDeleteDialogOpen(false);
-      setDeletingMemoryId(null);
+      setToast({ message: "Memory deleted", variant: "success" });
+    },
+    onError: () => {
+      setToast({ message: "Failed to delete memory", variant: "error" });
     },
   });
 
@@ -50,23 +58,35 @@ export default function MemoriesPage() {
   );
 
   const handleAddMemory = () => {
+    if (createMutation.isPending) {
+      return;
+    }
+
     if (newMemoryContent.trim()) {
       createMutation.mutate({ content: newMemoryContent.trim() });
     }
   };
 
-  const handleEditMemory = () => {
-    if (editingMemory && editingMemory.content.trim()) {
-      updateMutation.mutate({
-        id: editingMemory.id,
-        content: editingMemory.content.trim(),
-      });
-    }
+  const startEditingMemory = (id: string, content: string) => {
+    setEditingMemoryId(id);
+    setEditingContent(content);
   };
 
-  const handleDeleteMemory = () => {
-    if (deletingMemoryId) {
-      deleteMutation.mutate({ id: deletingMemoryId });
+  const cancelEditingMemory = () => {
+    setEditingMemoryId(null);
+    setEditingContent("");
+  };
+
+  const handleEditMemory = () => {
+    if (updateMutation.isPending) {
+      return;
+    }
+
+    if (editingMemoryId && editingContent.trim()) {
+      updateMutation.mutate({
+        id: editingMemoryId,
+        content: editingContent.trim(),
+      });
     }
   };
 
@@ -81,7 +101,7 @@ export default function MemoriesPage() {
         </p>
       </div>
 
-      {/* Search and Add */}
+      {/* Search */}
       <div className="mb-4 flex gap-2">
         <Input
           placeholder="Search memories..."
@@ -89,19 +109,11 @@ export default function MemoriesPage() {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="flex-1"
         />
-        <Button
-          variant="default"
-          onClick={() => setIsAddDialogOpen(true)}
-          className="gap-2"
-        >
-          <PiPlusDefaultStroke className="size-4" />
-          Add Memory
-        </Button>
       </div>
 
       {/* Memories List */}
       <ScrollArea className="flex-1 rounded-lg border border-border">
-        <div className="p-4">
+        <div className="space-y-3 p-4">
           {!filteredMemories || filteredMemories.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <p className="text-sm text-muted-foreground">
@@ -122,160 +134,138 @@ export default function MemoriesPage() {
                   className="flex items-start gap-3 rounded-lg border border-border bg-card p-3"
                 >
                   <div className="flex-1">
-                    <p className="text-sm">{memory.content}</p>
-                    <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
-                      <span>
-                        {memory.metadata?.source === "manual"
-                          ? "Manually added"
-                          : "Automatically detected"}
-                      </span>
-                      {memory.metadata?.confidence !== undefined && (
-                        <span>
-                          Confidence: {(memory.metadata.confidence * 100).toFixed(0)}%
-                        </span>
-                      )}
-                      <span>
-                        {new Date(memory.createdAt).toLocaleDateString()}
-                      </span>
+                    {editingMemoryId === memory.id ? (
+                      <div className="space-y-2">
+                        <Textarea
+                          value={editingContent}
+                          onChange={(e) => setEditingContent(e.target.value)}
+                          rows={3}
+                          onKeyDown={(e) => {
+                            if (e.key === "Escape") {
+                              e.preventDefault();
+                              cancelEditingMemory();
+                              return;
+                            }
+
+                            if (e.key === "Enter" && !e.shiftKey) {
+                              e.preventDefault();
+                              handleEditMemory();
+                            }
+                          }}
+                          autoFocus
+                        />
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className="size-8 focus-visible:ring-[3px] focus-visible:ring-ring"
+                            onClick={handleEditMemory}
+                            disabled={
+                              !editingContent.trim() || updateMutation.isPending
+                            }
+                          >
+                            <PiCheckTickSingleStroke className="size-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8 focus-visible:ring-[3px] focus-visible:ring-ring"
+                            onClick={cancelEditingMemory}
+                            disabled={updateMutation.isPending}
+                          >
+                            <PiMultipleCrossCancelDefaultStroke className="size-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <p
+                          className="text-sm"
+                          onDoubleClick={() =>
+                            startEditingMemory(memory.id, memory.content)
+                          }
+                        >
+                          {memory.content}
+                        </p>
+                        <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
+                          <span>
+                            {memory.metadata?.source === "manual"
+                              ? "Manually added"
+                              : "Automatically detected"}
+                          </span>
+                          {memory.metadata?.confidence !== undefined && (
+                            <span>
+                              Confidence: {(memory.metadata.confidence * 100).toFixed(0)}%
+                            </span>
+                          )}
+                          <span>
+                            {new Date(memory.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  {editingMemoryId !== memory.id && (
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => startEditingMemory(memory.id, memory.content)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-8"
+                        onClick={() => deleteMutation.mutate({ id: memory.id })}
+                        disabled={deleteMutation.isPending}
+                      >
+                        <PiMultipleCrossCancelDefaultStroke className="size-4" />
+                      </Button>
                     </div>
-                  </div>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setEditingMemory({
-                          id: memory.id,
-                          content: memory.content,
-                        });
-                        setIsEditDialogOpen(true);
-                      }}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="size-8"
-                      onClick={() => {
-                        setDeletingMemoryId(memory.id);
-                        setIsDeleteDialogOpen(true);
-                      }}
-                    >
-                      <PiMultipleCrossCancelDefaultStroke className="size-4" />
-                    </Button>
-                  </div>
+                  )}
                 </div>
               ))}
             </div>
           )}
+
+          <div className="rounded-lg border border-border bg-card p-3">
+            <div className="flex items-end gap-2">
+              <Textarea
+                placeholder="Add a new memory..."
+                value={newMemoryContent}
+                onChange={(e) => setNewMemoryContent(e.target.value)}
+                rows={2}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleAddMemory();
+                  }
+                }}
+              />
+              <Button
+                variant="default"
+                size="sm"
+                className="gap-2 self-end"
+                onClick={handleAddMemory}
+                disabled={!newMemoryContent.trim() || createMutation.isPending}
+              >
+                <PiPlusDefaultStroke className="size-4" />
+                {createMutation.isPending ? "Adding..." : "Add"}
+              </Button>
+            </div>
+          </div>
         </div>
       </ScrollArea>
 
-      {/* Add Memory Dialog */}
-      <Dialog.Root
-        open={isAddDialogOpen}
-        onOpenChange={setIsAddDialogOpen}
-      >
-        <Dialog.Popup>
-          <Dialog.Header>
-            <Dialog.Title>Add New Memory</Dialog.Title>
-            <Dialog.Description>
-              Add a preference or context for Menza to remember.
-            </Dialog.Description>
-          </Dialog.Header>
-          <Dialog.Body>
-            <Textarea
-              placeholder="E.g., 'Always show revenue in GBP' or 'Exclude test accounts from reports'"
-              value={newMemoryContent}
-              onChange={(e) => setNewMemoryContent(e.target.value)}
-              rows={4}
-            />
-          </Dialog.Body>
-          <Dialog.Footer className="flex justify-end gap-2">
-            <Dialog.Close render={<Button variant="secondary" />}>
-              Cancel
-            </Dialog.Close>
-            <Button
-              variant="default"
-              onClick={handleAddMemory}
-              disabled={!newMemoryContent.trim() || createMutation.isPending}
-            >
-              {createMutation.isPending ? "Adding..." : "Add Memory"}
-            </Button>
-          </Dialog.Footer>
-        </Dialog.Popup>
-      </Dialog.Root>
-
-      {/* Edit Memory Dialog */}
-      <Dialog.Root
-        open={isEditDialogOpen}
-        onOpenChange={setIsEditDialogOpen}
-      >
-        <Dialog.Popup>
-          <Dialog.Header>
-            <Dialog.Title>Edit Memory</Dialog.Title>
-            <Dialog.Description>
-              Update the content of this memory.
-            </Dialog.Description>
-          </Dialog.Header>
-          <Dialog.Body>
-            <Textarea
-              value={editingMemory?.content ?? ""}
-              onChange={(e) =>
-                setEditingMemory(
-                  editingMemory
-                    ? { ...editingMemory, content: e.target.value }
-                    : null,
-                )
-              }
-              rows={4}
-            />
-          </Dialog.Body>
-          <Dialog.Footer className="flex justify-end gap-2">
-            <Dialog.Close render={<Button variant="secondary" />}>
-              Cancel
-            </Dialog.Close>
-            <Button
-              variant="default"
-              onClick={handleEditMemory}
-              disabled={
-                !editingMemory?.content.trim() || updateMutation.isPending
-              }
-            >
-              {updateMutation.isPending ? "Saving..." : "Save Changes"}
-            </Button>
-          </Dialog.Footer>
-        </Dialog.Popup>
-      </Dialog.Root>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog.Root
-        open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-      >
-        <Dialog.Popup>
-          <Dialog.Header>
-            <Dialog.Title>Delete Memory</Dialog.Title>
-            <Dialog.Description>
-              Are you sure you want to delete this memory? This action cannot be
-              undone.
-            </Dialog.Description>
-          </Dialog.Header>
-          <Dialog.Footer className="flex justify-end gap-2">
-            <Dialog.Close render={<Button variant="secondary" />}>
-              Cancel
-            </Dialog.Close>
-            <Button
-              variant="default"
-              onClick={handleDeleteMemory}
-              disabled={deleteMutation.isPending}
-            >
-              {deleteMutation.isPending ? "Deleting..." : "Delete"}
-            </Button>
-          </Dialog.Footer>
-        </Dialog.Popup>
-      </Dialog.Root>
+      {toast && (
+        <Toast
+          message={toast.message}
+          variant={toast.variant}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }

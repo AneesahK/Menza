@@ -51,7 +51,7 @@ export async function processRunAgent(
       queryFn,
     });
 
-    // Inject data source context as system messages (first run only)
+    // Refresh managed system context (includes latest relevant memories) for each user query run
     await agent.createConversation();
 
     await agent.run();

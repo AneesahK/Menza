@@ -84,17 +84,43 @@ export const memoryRouter = createTRPCRouter({
       // Generate new embedding for the updated content
       const embedding = await embed(input.content);
 
+      const existing = await ctx.db.query.userMemoryTable.findFirst({
+        where: and(
+          eq(userMemoryTable.id, input.id),
+          eq(userMemoryTable.userId, ctx.session.userId),
+          eq(userMemoryTable.orgId, ctx.session.orgId),
+        ),
+        columns: {
+          metadata: true,
+        },
+      });
+
+      if (!existing) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Memory not found",
+        });
+      }
+
       const [updated] = await ctx.db
         .update(userMemoryTable)
         .set({
           content: input.content,
           embedding,
+          metadata: {
+            confidence: existing.metadata?.confidence ?? 1,
+            ...(existing.metadata?.category
+              ? { category: existing.metadata.category }
+              : {}),
+            source: "manual",
+          },
           updatedAt: new Date(),
         })
         .where(
           and(
             eq(userMemoryTable.id, input.id),
             eq(userMemoryTable.userId, ctx.session.userId),
+            eq(userMemoryTable.orgId, ctx.session.orgId),
           ),
         )
         .returning();

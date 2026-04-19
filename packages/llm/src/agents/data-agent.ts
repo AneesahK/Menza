@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 
 import { ExecSqlTool } from "../tools/exec-sql.js";
 import { ShowWidgetTool, type ShowWidgetInput } from "../tools/show-widget.js";
@@ -31,6 +31,8 @@ Example suggestion format:
 <suggestion>What are the top 10 products by revenue?</suggestion>
 <suggestion>How does this compare to last month?</suggestion>`;
 
+const DATA_AGENT_CONTEXT_EXPLANATION = "data-agent-managed-context-v1";
+
 interface DataAgentParams {
   ctx: AgentContext;
   dataSourceContext: string;
@@ -54,21 +56,81 @@ export class DataAgent {
     this.queryFn = params.queryFn;
   }
 
-  /** Idempotent — skips if system messages already exist for this conversation. */
+  /**
+   * Refreshes the hidden run context message for this conversation.
+   * Called on every run-agent job so memory edits are reflected in new user queries.
+   */
   async createConversation(): Promise<void> {
-    const existing = await this.ctx.db
+    const contextMessage = await this.buildConversationContextMessage();
+
+    const existingManaged = await this.ctx.db
       .select({ id: messageTable.id })
       .from(messageTable)
       .where(
         and(
           eq(messageTable.conversationId, this.ctx.conversationId),
           eq(messageTable.role, "system"),
+          eq(messageTable.explanation, DATA_AGENT_CONTEXT_EXPLANATION),
         ),
       )
+      .orderBy(asc(messageTable.createdAt))
       .limit(1);
 
-    if (existing.length > 0) return;
+    if (existingManaged[0]) {
+      await this.ctx.db
+        .update(messageTable)
+        .set({
+          message: contextMessage,
+          runId: this.ctx.runId,
+          updatedAt: new Date(),
+        })
+        .where(eq(messageTable.id, existingManaged[0].id));
 
+      return;
+    }
+
+    // Backfill legacy conversations by reusing the first hidden system message.
+    const legacySystemMessage = await this.ctx.db
+      .select({ id: messageTable.id })
+      .from(messageTable)
+      .where(
+        and(
+          eq(messageTable.conversationId, this.ctx.conversationId),
+          eq(messageTable.role, "system"),
+          eq(messageTable.isVisible, false),
+        ),
+      )
+      .orderBy(asc(messageTable.createdAt))
+      .limit(1);
+
+    if (legacySystemMessage[0]) {
+      await this.ctx.db
+        .update(messageTable)
+        .set({
+          message: contextMessage,
+          explanation: DATA_AGENT_CONTEXT_EXPLANATION,
+          runId: this.ctx.runId,
+          updatedAt: new Date(),
+        })
+        .where(eq(messageTable.id, legacySystemMessage[0].id));
+
+      return;
+    }
+
+    await this.ctx.db.insert(messageTable).values({
+      id: createID("message"),
+      userId: this.ctx.userId,
+      orgId: this.ctx.orgId,
+      conversationId: this.ctx.conversationId,
+      message: contextMessage,
+      role: "system",
+      isVisible: false,
+      explanation: DATA_AGENT_CONTEXT_EXPLANATION,
+      runId: this.ctx.runId,
+    });
+  }
+
+  private async buildConversationContextMessage(): Promise<string> {
     // Fetch user memories and inject them into the system prompt
     let userContextMessage = "";
     try {
@@ -105,16 +167,7 @@ export class DataAgent {
       // Continue without memories if there's an error
     }
 
-    await this.ctx.db.insert(messageTable).values({
-      id: createID("message"),
-      userId: this.ctx.userId,
-      orgId: this.ctx.orgId,
-      conversationId: this.ctx.conversationId,
-      message: `${userContextMessage}<data_source_context>\n${this.dataSourceContext}\n</data_source_context>`,
-      role: "system",
-      isVisible: false,
-      runId: this.ctx.runId,
-    });
+    return `${userContextMessage}<data_source_context>\n${this.dataSourceContext}\n</data_source_context>`;
   }
 
   async run(): Promise<void> {

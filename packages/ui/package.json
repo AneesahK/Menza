@@ -18,6 +18,7 @@
     "./components/button": "./src/components/button.tsx",
     "./components/input": "./src/components/input.tsx",
     "./components/textarea": "./src/components/textarea.tsx",
+    "./components/toast": "./src/components/toast.tsx",
     "./components/separator": "./src/components/separator.tsx",
     "./components/skeleton": "./src/components/skeleton.tsx",
     "./components/tooltip": "./src/components/tooltip.tsx",

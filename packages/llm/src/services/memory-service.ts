@@ -149,11 +149,35 @@ export class MemoryService {
   }): Promise<UserMemory> {
     const embedding = await embed(params.content);
 
+    const [existing] = await this.db
+      .select({
+        metadata: userMemoryTable.metadata,
+      })
+      .from(userMemoryTable)
+      .where(
+        and(
+          eq(userMemoryTable.id, params.id),
+          eq(userMemoryTable.userId, params.userId),
+        ),
+      )
+      .limit(1);
+
+    if (!existing) {
+      throw new Error("Memory not found or update failed");
+    }
+
     const [updated] = await this.db
       .update(userMemoryTable)
       .set({
         content: params.content,
         embedding,
+        metadata: {
+          confidence: existing.metadata?.confidence ?? 1,
+          ...(existing.metadata?.category
+            ? { category: existing.metadata.category }
+            : {}),
+          source: "manual",
+        },
         updatedAt: new Date(),
       })
       .where(
