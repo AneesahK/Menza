@@ -1,0 +1,1 @@
+Need to implement the manual add, delete and edit on memories screen (Claude implementation doesn't work properly)

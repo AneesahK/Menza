@@ -41,8 +41,9 @@ chatRouter.post("/chat", async (c) => {
   });
 
   if (body.initialMessage) {
+    const messageId = createID("message");
     await db.insert(messageTable).values({
-      id: createID("message"),
+      id: messageId,
       userId,
       orgId,
       conversationId,
@@ -50,6 +51,15 @@ chatRouter.post("/chat", async (c) => {
       role: "user",
       isVisible: true,
       runId,
+    });
+
+    // Enqueue preference detection job (non-blocking)
+    console.log("Enqueuing detect-preferences job for message:", body.initialMessage);
+    void queues.mainQueue.add("detect-preferences", {
+      userId,
+      orgId,
+      messageId,
+      messageContent: body.initialMessage,
     });
 
     await queues.mainQueue.add("run-agent", {
@@ -90,8 +100,9 @@ chatRouter.post("/chat/:conversationId", async (c) => {
     .set({ status: "in_progress", runId })
     .where(eq(conversationTable.id, conversationId));
 
+  const messageId = createID("message");
   await db.insert(messageTable).values({
-    id: createID("message"),
+    id: messageId,
     userId,
     orgId,
     conversationId,
@@ -99,6 +110,15 @@ chatRouter.post("/chat/:conversationId", async (c) => {
     role: "user",
     isVisible: true,
     runId,
+  });
+
+  // Enqueue preference detection job (non-blocking)
+  console.log("Enqueuing detect-preferences job for message:", body.message);
+  void queues.mainQueue.add("detect-preferences", {
+    userId,
+    orgId,
+    messageId,
+    messageContent: body.message,
   });
 
   await queues.mainQueue.add("run-agent", {

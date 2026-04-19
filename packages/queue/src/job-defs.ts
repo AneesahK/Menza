@@ -60,6 +60,23 @@ export type JobDefinitions = {
           success: false;
         };
   };
+
+  /**
+   * Detect and store user preferences from a message.
+   * Enqueued after each user message is sent.
+   */
+  "detect-preferences": {
+    data: {
+      userId: string;
+      orgId: string;
+      messageId: string;
+      messageContent: string;
+    };
+    returnType: {
+      success: boolean;
+      preferencesDetected: number;
+    };
+  };
 };
 
 export type JobName = keyof JobDefinitions;

@@ -1,5 +1,6 @@
 import { Worker } from "bullmq";
 
+import { processDetectPreferences } from "./jobs/detect-preferences.js";
 import { processGenerateConversationTitle } from "./jobs/generate-conversation-title.js";
 import { processRunAgent } from "./jobs/run-agent.js";
 import type { JobData, JobName, JobReturn } from "@demo/queue/jobs";
@@ -14,6 +15,7 @@ type ProcessorMap = {
 const jobProcessors: ProcessorMap = {
   "run-agent": processRunAgent,
   "generate-conversation-title": processGenerateConversationTitle,
+  "detect-preferences": processDetectPreferences,
 };
 
 const worker = new Worker(

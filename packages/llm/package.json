@@ -28,6 +28,16 @@
       "import": "./dist/services/anthropic.js",
       "default": "./dist/services/anthropic.js"
     },
+    "./services/memory-service": {
+      "types": "./dist/services/memory-service.d.ts",
+      "import": "./dist/services/memory-service.js",
+      "default": "./dist/services/memory-service.js"
+    },
+    "./helpers/embeddings": {
+      "types": "./dist/helpers/embeddings.d.ts",
+      "import": "./dist/helpers/embeddings.js",
+      "default": "./dist/helpers/embeddings.js"
+    },
     "./stream/emitter": {
       "types": "./dist/stream/emitter.d.ts",
       "import": "./dist/stream/emitter.js",
@@ -60,6 +70,7 @@
     "@demo/queue": "workspace:*",
     "drizzle-orm": "0.44.6",
     "ioredis": "5.8.2",
+    "openai": "4.79.0",
     "zod": "3.25.67",
     "zod-to-json-schema": "3.25.1"
   },

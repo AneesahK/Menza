@@ -12,6 +12,7 @@ const prefixes = {
   orgMember: "om",
   run: "run",
   toolCall: "tool",
+  memory: "mem",
 } as const;
 
 export function createID(entity: keyof typeof prefixes): string {

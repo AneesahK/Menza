@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 
 import { ExecSqlTool } from "../tools/exec-sql.js";
 import { ShowWidgetTool, type ShowWidgetInput } from "../tools/show-widget.js";
@@ -9,6 +9,7 @@ import { WidgetAgent } from "./widget-agent.js";
 import type Anthropic from "@anthropic-ai/sdk";
 import { conversationTable, messageTable } from "@demo/db/schema";
 import { createID } from "@demo/db/utils";
+import { MemoryService } from "../services/memory-service.js";
 
 const DATA_AGENT_SYSTEM_PROMPT = `You are Menza, a helpful BI (business intelligence) and data analysis assistant. You help users explore, understand, and visualize their business data.
 
@@ -68,12 +69,48 @@ export class DataAgent {
 
     if (existing.length > 0) return;
 
+    // Fetch user memories and inject them into the system prompt
+    let userContextMessage = "";
+    try {
+      // Get the latest user message to use as the query for memory search
+      const latestUserMessage = await this.ctx.db
+        .select()
+        .from(messageTable)
+        .where(
+          and(
+            eq(messageTable.conversationId, this.ctx.conversationId),
+            eq(messageTable.role, "user"),
+          ),
+        )
+        .orderBy(desc(messageTable.createdAt))
+        .limit(1);
+
+      if (latestUserMessage[0]?.message) {
+        const memoryService = new MemoryService(this.ctx.db);
+        const relevantMemories = await memoryService.searchMemories({
+          userId: this.ctx.userId,
+          query: latestUserMessage[0].message,
+          limit: 10,
+        });
+
+        // Only inject memories if we found any with reasonable similarity
+        const filteredMemories = relevantMemories.filter((m) => m.similarity > 0.5);
+        if (filteredMemories.length > 0) {
+          userContextMessage = memoryService.formatForPrompt(filteredMemories, 500);
+          userContextMessage += "\n\n";
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch user memories:", error);
+      // Continue without memories if there's an error
+    }
+
     await this.ctx.db.insert(messageTable).values({
       id: createID("message"),
       userId: this.ctx.userId,
       orgId: this.ctx.orgId,
       conversationId: this.ctx.conversationId,
-      message: `<data_source_context>\n${this.dataSourceContext}\n</data_source_context>`,
+      message: `${userContextMessage}<data_source_context>\n${this.dataSourceContext}\n</data_source_context>`,
       role: "system",
       isVisible: false,
       runId: this.ctx.runId,

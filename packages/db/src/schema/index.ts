@@ -22,4 +22,10 @@ export {
   widgetRelations,
 } from "./relations.js";
 export { userTable } from "./user.js";
+export {
+  userMemoryTable,
+  type UserMemory,
+  type UserMemoryInsert,
+  type UserMemoryMetadata,
+} from "./user-memory.js";
 export { widgetTable } from "./widget.js";
