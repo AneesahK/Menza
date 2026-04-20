@@ -32,6 +32,8 @@ Example suggestion format:
 <suggestion>How does this compare to last month?</suggestion>`;
 
 const DATA_AGENT_CONTEXT_EXPLANATION = "data-agent-managed-context-v1";
+const MEMORY_CONTEXT_TOKEN_CAP = 500;
+const MEMORY_SIMILARITY_THRESHOLD = 0.5;
 
 interface DataAgentParams {
   ctx: AgentContext;
@@ -134,11 +136,18 @@ export class DataAgent {
     // Fetch user memories and inject them into the system prompt
     let userContextMessage = "";
     try {
+      const memoryService = new MemoryService(this.ctx.db);
+
       // Fast path: Skip memory search if user has no memories
       const memoryCount = await this.ctx.db
         .select({ count: sql<number>`count(*)` })
         .from(userMemoryTable)
-        .where(eq(userMemoryTable.userId, this.ctx.userId));
+        .where(
+          and(
+            eq(userMemoryTable.userId, this.ctx.userId),
+            eq(userMemoryTable.orgId, this.ctx.orgId),
+          ),
+        );
 
       if (memoryCount[0]?.count === 0) {
         // No memories, skip the entire memory search process
@@ -159,17 +168,22 @@ export class DataAgent {
         .limit(1);
 
       if (latestUserMessage[0]?.message) {
-        const memoryService = new MemoryService(this.ctx.db);
         const relevantMemories = await memoryService.searchMemories({
           userId: this.ctx.userId,
+          orgId: this.ctx.orgId,
           query: latestUserMessage[0].message,
           limit: 10,
         });
 
         // Only inject memories if we found any with reasonable similarity
-        const filteredMemories = relevantMemories.filter((m) => m.similarity > 0.5);
+        const filteredMemories = relevantMemories.filter(
+          (m) => m.similarity > MEMORY_SIMILARITY_THRESHOLD,
+        );
         if (filteredMemories.length > 0) {
-          userContextMessage = memoryService.formatForPrompt(filteredMemories, 500);
+          userContextMessage = memoryService.formatForPrompt(
+            filteredMemories,
+            MEMORY_CONTEXT_TOKEN_CAP,
+          );
           userContextMessage += "\n\n";
         }
       }

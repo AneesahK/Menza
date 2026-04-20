@@ -53,14 +53,17 @@ chatRouter.post("/chat", async (c) => {
       runId,
     });
 
-    // Enqueue preference detection job (non-blocking)
-    console.log("Enqueuing detect-preferences job for message:", body.initialMessage);
-    void queues.mainQueue.add("detect-preferences", {
-      userId,
-      orgId,
-      messageId,
-      messageContent: body.initialMessage,
-    });
+    // Enqueue preference detection first and dedupe by messageId.
+    await queues.mainQueue.add(
+      "detect-preferences",
+      {
+        userId,
+        orgId,
+        messageId,
+        messageContent: body.initialMessage,
+      },
+      { jobId: messageId },
+    );
 
     await queues.mainQueue.add("run-agent", {
       userId,
@@ -112,14 +115,17 @@ chatRouter.post("/chat/:conversationId", async (c) => {
     runId,
   });
 
-  // Enqueue preference detection job (non-blocking)
-  console.log("Enqueuing detect-preferences job for message:", body.message);
-  void queues.mainQueue.add("detect-preferences", {
-    userId,
-    orgId,
-    messageId,
-    messageContent: body.message,
-  });
+  // Enqueue preference detection first and dedupe by messageId.
+  await queues.mainQueue.add(
+    "detect-preferences",
+    {
+      userId,
+      orgId,
+      messageId,
+      messageContent: body.message,
+    },
+    { jobId: messageId },
+  );
 
   await queues.mainQueue.add("run-agent", {
     userId,

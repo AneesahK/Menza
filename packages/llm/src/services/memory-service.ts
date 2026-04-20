@@ -9,7 +9,9 @@ interface SearchResult extends UserMemory {
 }
 
 export class MemoryService {
-  constructor(private readonly db: NodePgDatabase<any>) {}
+  constructor(
+    private readonly db: NodePgDatabase<Record<string, unknown>>,
+  ) {}
 
   /**
    * Store a new memory for a user.
@@ -49,10 +51,11 @@ export class MemoryService {
    */
   async searchMemories(params: {
     userId: string;
+    orgId: string;
     query: string;
     limit?: number;
   }): Promise<Array<SearchResult>> {
-    const { userId, query, limit = 10 } = params;
+    const { userId, orgId, query, limit = 10 } = params;
 
     const queryEmbedding = await embed(query);
 
@@ -63,6 +66,7 @@ export class MemoryService {
       .where(
         and(
           eq(userMemoryTable.userId, userId),
+          eq(userMemoryTable.orgId, orgId),
           isNotNull(userMemoryTable.embedding),
         ),
       );
@@ -123,7 +127,7 @@ export class MemoryService {
   /**
    * Get all memories for a user (for UI display).
    */
-  async getAllMemories(params: {
+  getAllMemories(params: {
     userId: string;
     orgId: string;
   }): Promise<Array<UserMemory>> {
@@ -201,6 +205,7 @@ export class MemoryService {
   async deleteMemory(params: {
     id: string;
     userId: string;
+    orgId: string;
   }): Promise<void> {
     await this.db
       .delete(userMemoryTable)
@@ -208,6 +213,7 @@ export class MemoryService {
         and(
           eq(userMemoryTable.id, params.id),
           eq(userMemoryTable.userId, params.userId),
+          eq(userMemoryTable.orgId, params.orgId),
         ),
       );
   }

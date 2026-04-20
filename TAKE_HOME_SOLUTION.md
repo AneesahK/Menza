@@ -97,10 +97,15 @@ Result:
 ## Retrieval and Prompt Policy
 Current memory injection policy:
 1. Retrieve candidate memories via embedding similarity.
-2. Filter low similarity memories.
-3. Format for prompt under a memory context token cap (~500-token budget).
+2. Filter low-similarity matches.
+3. Format selected memories for prompt under the memory context token cap (~500).
 
 This balances relevance with prompt size while staying simple for this scope.
+
+## Diagram Preference Handling
+Diagram preferences (for example, "prefer bar charts") flow through the same memory pipeline as other preferences. If relevant memory is retrieved for a query, it can influence how visual requests are framed.
+
+For this take-home, this behavior is implicit rather than a strict chart-type policy layer, so it is often respected but not guaranteed in every case.
 
 ## Tradeoffs and Decisions
 
@@ -131,9 +136,10 @@ These are the next high-leverage improvements:
 - Add configurable precedence when both org-level defaults and user-level overrides exist.
   - Validate desired precedence with customers and product stakeholders.
 
-### 2) Smarter retrieval skip logic
-- If all memories together are below the token cap, bypass semantic ranking and include all.
-- Avoid paying retrieval overhead when ranking would not change output.
+### 2) Optional under-cap retrieval bypass
+- If all memories together are below the token cap, skip semantic ranking and include all.
+- Benefit: lower latency by avoiding unnecessary ranking work.
+- Tradeoff: potentially worse precision, because unrelated memories may be injected.
 
 ### 3) Query-similarity cache (phase 2)
 - Cache last query embedding + selected memory context.

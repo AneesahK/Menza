@@ -1,6 +1,8 @@
 import type { Job } from "bullmq";
 import Anthropic from "@anthropic-ai/sdk";
+import { and, eq } from "drizzle-orm";
 import { db } from "../lib/db.js";
+import { userMemoryTable } from "@demo/db/schema";
 import type { JobData, JobReturn } from "@demo/queue/jobs";
 import { MemoryService } from "@demo/llm/services/memory-service";
 
@@ -51,10 +53,10 @@ export async function processDetectPreferences(
     "detect-preferences"
   >,
 ): Promise<JobReturn<"detect-preferences">> {
-  const { userId, orgId, messageContent } = job.data;
+  const { userId, orgId, messageId, messageContent } = job.data;
 
   console.log("=== Detecting preferences ===");
-  console.log("Message:", messageContent);
+  console.log(`Detect-preferences context: user=${userId} org=${orgId} message=${messageId}`);
 
   try {
     // Use Claude to extract preferences from the message
@@ -106,6 +108,22 @@ export async function processDetectPreferences(
 
     for (const pref of validPreferences) {
       try {
+        const existingMemory = await db.query.userMemoryTable.findFirst({
+          where: and(
+            eq(userMemoryTable.userId, userId),
+            eq(userMemoryTable.orgId, orgId),
+            eq(userMemoryTable.content, pref.content),
+          ),
+          columns: {
+            id: true,
+          },
+        });
+
+        if (existingMemory) {
+          console.log(`Skipping duplicate preference (category: ${pref.category}, confidence: ${pref.confidence})`);
+          continue;
+        }
+
         await memoryService.storeMemory({
           userId,
           orgId,
@@ -117,7 +135,7 @@ export async function processDetectPreferences(
           },
         });
         stored++;
-        console.log(`Stored preference: ${pref.content} (confidence: ${pref.confidence})`);
+        console.log(`Stored preference (category: ${pref.category}, confidence: ${pref.confidence})`);
       } catch (error) {
         console.error("Failed to store preference:", error);
       }

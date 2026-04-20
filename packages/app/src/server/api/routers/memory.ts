@@ -151,6 +151,7 @@ export const memoryRouter = createTRPCRouter({
           and(
             eq(userMemoryTable.id, input.id),
             eq(userMemoryTable.userId, ctx.session.userId),
+            eq(userMemoryTable.orgId, ctx.session.orgId),
           ),
         )
         .returning();

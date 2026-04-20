@@ -113,6 +113,7 @@ Edit `.env` and add your API keys:
 ```sh
 ANTHROPIC_API_KEY=sk-ant-...    # Required — powers the chat agent
 GOOGLE_AI_API_KEY=...            # Required — powers conversation title generation
+OPENAI_API_KEY=...               # Required — powers memory embeddings/retrieval
 ```
 
 The database and Redis URLs default to the docker-compose values. `AUTH_SECRET`

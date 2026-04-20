@@ -17,7 +17,7 @@ export const userMemoryTable = pgTable(
     userId: varchar("user_id", { length: 64 }).notNull(),
     orgId: varchar("org_id", { length: 64 }),
     content: text("content").notNull(),
-    embedding: jsonb("embedding").$type<number[]>(),
+    embedding: jsonb("embedding").$type<Array<number>>(),
     metadata: jsonb("metadata").$type<UserMemoryMetadata>(),
   },
   (table) => {
