@@ -157,6 +157,9 @@ These are the next high-leverage improvements:
   - edit/delete behavior in existing conversations
 - Add regression tests for memory source transitions and tenant boundaries.
 
+### 6) Improve deduplication policy for memories
+- Currently, very basic
+
 ## Summary
 This implementation introduces a practical memory architecture that improves user trust and consistency without overengineering:
 - Durable memory storage
